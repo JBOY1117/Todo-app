@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow Studio — Full-Stack To-Do Workspace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[var(--bg-canvas)] text-[var(--text-primary)] min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="h-16 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-6 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-lg">
+        ✓
+      </div>
+      <div>
+        <h1 class="font-bold text-lg tracking-tight leading-none">TaskFlow Studio</h1>
+        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Modern To-Do & Productivity Workspace</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="btn-php-api-modal" class="tf-btn-ghost px-3 py-1.5 text-xs flex items-center gap-2 hover:border-teal-500/50">
+        <span>PHP API Status</span>
+        <span id="api-engine-badge" class="px-1.5 py-0.5 rounded text-[10px] bg-teal-500/20 text-teal-400 font-mono">SQLite</span>
+      </button>
+      <button id="btn-theme-toggle" class="tf-btn-ghost w-9 h-9 flex items-center justify-center rounded-lg text-sm">
+        🌙
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-72 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 flex flex-col gap-6 overflow-y-auto shrink-0">
+      <!-- Completion Stats -->
+      <div class="tf-elevated p-4 rounded-xl">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Progress</span>
+          <span id="stat-percent" class="text-xs font-bold text-teal-400">0%</span>
+        </div>
+        <div class="w-full bg-[var(--bg-canvas)] h-2 rounded-full overflow-hidden mb-2">
+          <div id="stat-progress-bar" class="bg-teal-500 h-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-[var(--text-secondary)]">
+          <span>Completed: <strong id="stat-completed" class="text-[var(--text-primary)]">0</strong></span>
+          <span>Total: <strong id="stat-total" class="text-[var(--text-primary)]">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Smart Views Nav -->
+      <div>
+        <h3 class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2 px-2">Smart Views</h3>
+        <nav class="space-y-1">
+          <button data-view="all" class="nav-item active">
+            <span class="flex items-center gap-2.5">📋 All Tasks</span>
+            <span class="count-badge text-xs px-2 py-0.5 rounded-full bg-[var(--bg-canvas)]">0</span>
+          </button>
+          <button data-view="today" class="nav-item">
+            <span class="flex items-center gap-2.5">📅 Due Today</span>
+            <span class="count-badge text-xs px-2 py-0.5 rounded-full bg-[var(--bg-canvas)]">0</span>
+          </button>
+          <button data-view="upcoming" class="nav-item">
+            <span class="flex items-center gap-2.5">🗓️ Upcoming</span>
+            <span class="count-badge text-xs px-2 py-0.5 rounded-full bg-[var(--bg-canvas)]">0</span>
+          </button>
+          <button data-view="pinned" class="nav-item">
+            <span class="flex items-center gap-2.5">📌 Pinned</span>
+            <span class="count-badge text-xs px-2 py-0.5 rounded-full bg-[var(--bg-canvas)]">0</span>
+          </button>
+          <button data-view="completed" class="nav-item">
+            <span class="flex items-center gap-2.5">✅ Completed</span>
+            <span class="count-badge text-xs px-2 py-0.5 rounded-full bg-[var(--bg-canvas)]">0</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Categories Nav -->
+      <div>
+        <h3 class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2 px-2">Categories</h3>
+        <nav class="space-y-1" id="categories-nav">
+          <button data-category="Engineering" class="nav-item">
+            <span class="flex items-center gap-2.5">💻 Engineering</span>
+          </button>
+          <button data-category="Design" class="nav-item">
+            <span class="flex items-center gap-2.5">🎨 Design</span>
+          </button>
+          <button data-category="Work" class="nav-item">
+            <span class="flex items-center gap-2.5">💼 Work</span>
+          </button>
+          <button data-category="Personal" class="nav-item">
+            <span class="flex items-center gap-2.5">👤 Personal</span>
+          </button>
+          <button data-category="Errands" class="nav-item">
+            <span class="flex items-center gap-2.5">🛒 Errands</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Focus Timer -->
+      <div class="mt-auto tf-elevated p-4 rounded-xl border border-[var(--border-subtle)]">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+            ⏱️ Focus Timer
+          </span>
+          <span id="timer-mode" class="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-500/20 text-teal-400">POMODORO</span>
+        </div>
+        <div class="text-center my-2">
+          <div id="timer-display" class="text-3xl font-mono font-bold tracking-wider">25:00</div>
+          <p id="timer-task-title" class="text-xs text-[var(--text-secondary)] truncate mt-1">No active task selected</p>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <button id="btn-timer-start" class="flex-1 tf-btn-primary py-1.5 text-xs">Start</button>
+          <button id="btn-timer-reset" class="tf-btn-ghost px-3 py-1.5 text-xs">Reset</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Workspace -->
+    <main class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+      <!-- Quick Add Task Form -->
+      <form id="form-create-task" class="tf-surface p-4 flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <input type="text" id="input-task-title" placeholder="Add a new task..." required class="tf-input flex-1 px-4 py-2.5 text-sm">
+          <button type="submit" class="tf-btn-primary px-5 py-2.5 text-sm flex items-center gap-2 shrink-0">
+            + Add Task
+          </button>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+          <div class="flex items-center gap-1.5">
+            <label class="text-[var(--text-secondary)]">Category:</label>
+            <select id="select-category" class="tf-input px-2.5 py-1 text-xs">
+              <option value="Work">Work</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Design">Design</option>
+              <option value="Personal">Personal</option>
+              <option value="Errands">Errands</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <label class="text-[var(--text-secondary)]">Priority:</label>
+            <select id="select-priority" class="tf-input px-2.5 py-1 text-xs">
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <label class="text-[var(--text-secondary)]">Due:</label>
+            <input type="date" id="input-due-date" class="tf-input px-2.5 py-1 text-xs">
+          </div>
+          <div class="flex items-center gap-1.5 ml-auto">
+            <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[var(--text-secondary)]">
+              <input type="checkbox" id="check-pinned" class="rounded bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-teal-500">
+              Pin task
+            </label>
+          </div>
+        </div>
+      </form>
+
+      <!-- Search, Filter & Sort Toolbar -->
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3 flex-1 max-w-md">
+          <div class="relative flex-1">
+            <input type="text" id="input-search" placeholder="🔍 Search titles, notes, subtasks..." class="tf-input w-full px-3 py-1.5 text-xs">
+          </div>
+          <select id="select-filter-priority" class="tf-input px-3 py-1.5 text-xs">
+            <option value="all">All Priorities</option>
+            <option value="high">High Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="low">Low Priority</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- View switcher -->
+          <div class="flex bg-[var(--bg-surface)] p-1 rounded-lg border border-[var(--border-subtle)]">
+            <button id="btn-view-list" class="px-3 py-1 text-xs rounded-md bg-[var(--bg-elevated)] font-semibold text-teal-400">
+              List
+            </button>
+            <button id="btn-view-kanban" class="px-3 py-1 text-xs rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              Kanban
+            </button>
+          </div>
+
+          <select id="select-sort" class="tf-input px-3 py-1.5 text-xs">
+            <option value="created_desc">Newest First</option>
+            <option value="created_asc">Oldest First</option>
+            <option value="due_asc">Due Date (Earliest)</option>
+            <option value="priority_desc">Priority (High to Low)</option>
+          </select>
+
+          <button id="btn-clear-completed" class="tf-btn-ghost px-3 py-1.5 text-xs text-rose-400 border-rose-500/30 hover:bg-rose-500/10">
+            Clear Completed
+          </button>
+        </div>
+      </div>
+
+      <!-- Tasks Workspace (List or Kanban) -->
+      <div id="tasks-workspace" class="flex-1 min-h-[300px]"></div>
+    </main>
+  </div>
+
+  <!-- Modal Edit Task -->
+  <div id="modal-edit-task" class="fixed inset-0 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+    <div class="tf-surface w-full max-w-lg p-6 rounded-2xl shadow-2xl border border-[var(--border-strong)] flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b border-[var(--border-subtle)] pb-3">
+        <h3 class="font-bold text-base">Edit Task</h3>
+        <button id="btn-close-edit-modal" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">✕</button>
+      </div>
+      <form id="form-edit-task" class="flex flex-col gap-3">
+        <input type="hidden" id="edit-task-id">
+        <div>
+          <label class="block text-xs font-medium text-[var(--text-secondary)] mb-1">Title</label>
+          <input type="text" id="edit-task-title" required class="tf-input w-full px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-[var(--text-secondary)] mb-1">Notes / Description</label>
+          <textarea id="edit-task-notes" rows="3" class="tf-input w-full px-3 py-2 text-xs"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-[var(--text-secondary)] mb-1">Category</label>
+            <select id="edit-task-category" class="tf-input w-full px-3 py-1.5 text-xs">
+              <option value="Work">Work</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Design">Design</option>
+              <option value="Personal">Personal</option>
+              <option value="Errands">Errands</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[var(--text-secondary)] mb-1">Priority</label>
+            <select id="edit-task-priority" class="tf-input w-full px-3 py-1.5 text-xs">
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-[var(--text-secondary)] mb-1">Status</label>
+            <select id="edit-task-status" class="tf-input w-full px-3 py-1.5 text-xs">
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[var(--text-secondary)] mb-1">Due Date</label>
+            <input type="date" id="edit-task-due" class="tf-input w-full px-3 py-1.5 text-xs">
+          </div>
+        </div>
+
+        <!-- Subtasks Checklist in Modal -->
+        <div>
+          <label class="block text-xs font-medium text-[var(--text-secondary)] mb-1">Subtasks</label>
+          <div id="edit-subtasks-list" class="space-y-1.5 mb-2 max-h-36 overflow-y-auto"></div>
+          <div class="flex gap-2">
+            <input type="text" id="input-new-subtask" placeholder="Add a subtask..." class="tf-input flex-1 px-3 py-1 text-xs">
+            <button type="button" id="btn-add-subtask" class="tf-btn-ghost px-3 py-1 text-xs">Add</button>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
+          <button type="button" id="btn-cancel-edit" class="tf-btn-ghost px-4 py-2 text-xs">Cancel</button>
+          <button type="submit" class="tf-btn-primary px-5 py-2 text-xs">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal PHP API Inspector -->
+  <div id="modal-php-api" class="fixed inset-0 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+    <div class="tf-surface w-full max-w-xl p-6 rounded-2xl shadow-2xl border border-[var(--border-strong)] flex flex-col gap-4">
+      <div class="flex justify-between items-center border-b border-[var(--border-subtle)] pb-3">
+        <h3 class="font-bold text-base flex items-center gap-2">
+          PHP REST API Status & Endpoints
+        </h3>
+        <button id="btn-close-api-modal" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-3 bg-[var(--bg-elevated)] p-3 rounded-lg font-mono">
+          <div>Engine: <span id="api-info-engine" class="text-teal-400 font-bold">Checking...</span></div>
+          <div>PHP Version: <span id="api-info-php" class="text-teal-400 font-bold">Checking...</span></div>
+        </div>
+        <h4 class="font-semibold text-sm">Available Endpoints (`api.php`)</h4>
+        <div class="space-y-1.5 font-mono text-[11px]">
+          <div class="bg-[var(--bg-elevated)] p-2 rounded flex justify-between">
+            <span>GET api.php?action=list</span>
+            <span class="text-[var(--text-secondary)]">List all tasks</span>
+          </div>
+          <div class="bg-[var(--bg-elevated)] p-2 rounded flex justify-between">
+            <span>POST api.php?action=create</span>
+            <span class="text-[var(--text-secondary)]">Create new task</span>
+          </div>
+          <div class="bg-[var(--bg-elevated)] p-2 rounded flex justify-between">
+            <span>POST api.php?action=update</span>
+            <span class="text-[var(--text-secondary)]">Update task fields</span>
+          </div>
+          <div class="bg-[var(--bg-elevated)] p-2 rounded flex justify-between">
+            <span>POST api.php?action=delete</span>
+            <span class="text-[var(--text-secondary)]">Delete task by ID</span>
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button id="btn-export-json" class="tf-btn-ghost flex-1 py-2 text-xs flex items-center justify-center gap-1.5">
+            Export JSON Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
